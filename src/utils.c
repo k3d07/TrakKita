@@ -62,11 +62,15 @@ static int visible_length(const char *text) {
     int length = 0;
 
     for (int i = 0; text[i] != '\0'; i++) {
+        unsigned char ch = (unsigned char)text[i];
+
         if (text[i] == '\033' && text[i + 1] == '[') {
             i += 2;
             while (text[i] != '\0' && (text[i] < '@' || text[i] > '~')) {
                 i++;
             }
+        } else if ((ch & 0xC0) == 0x80) {
+            continue;
         } else {
             length++;
         }

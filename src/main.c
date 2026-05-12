@@ -19,13 +19,13 @@
 #include "utils.h"
 #include "structs.h"
 #include "route.h"
+#include "quicktap.h"
 
 /* Forward declarations for teammate modules */
 /* Uncomment as teammates finish their modules:
 #include "profit.h"
 #include "fuel.h"
 #include "breakeven.h"
-#include "quicktap.h"
 */
 
 /* ============================================================
@@ -210,7 +210,7 @@ static void print_main_menu(void) {
     print_row(FG_WHITE "  [2]  Fuel Consumption Log (7-Day)" RESET);
     print_row(FG_GREEN "  [3]  Route Efficiency Recommender" RESET);
     print_row(FG_WHITE "  [4]  Fare-to-Fuel Break-Even Simulator" RESET);
-    print_row(FG_WHITE "  [5]  Quick-Tap Fare Pad" RESET);
+    print_row(FG_GREEN "  [5]  Quick-Tap Fare Pad" RESET);
 
     print_blank_row();
     print_divider();
@@ -241,13 +241,6 @@ static void run_fuel_log(void) {
 static void run_breakeven(void) {
     clear_screen();
     printf(FG_YELLOW "\n  [Feature 4] Break-Even Simulator\n");
-    printf(DIM "  - Not yet implemented. Assigned to: ________\n" RESET);
-    pause_prompt();
-}
-
-static void run_quicktap(void) {
-    clear_screen();
-    printf(FG_YELLOW "\n  [Feature 5] Quick-Tap Fare Pad\n");
     printf(DIM "  - Not yet implemented. Assigned to: ________\n" RESET);
     pause_prompt();
 }

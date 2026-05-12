@@ -6,8 +6,8 @@
  *
  *  Description:
  *    Lets the driver quickly tally fares by pressing keys.
- *    Key 1 → adds ₱11.00 (regular fare)
- *    Key 2 → adds ₱13.00 (discounted fare / extra)
+ *    Key 1 → adds ₱13.00 (regular fare)
+ *    Key 2 → adds ₱11.00 (discounted fare)
  *    Key 3 → undo last tap
  *    Key 0 → done / exit pad
  * ============================================================ */
@@ -22,8 +22,8 @@
 #include "quicktap.h"
 
 /* ── Fare Constants ───────────────────────────────────────── */
-#define FARE_REGULAR     11.00f
-#define FARE_DISCOUNTED  13.00f
+#define FARE_REGULAR     13.00f
+#define FARE_DISCOUNTED  11.00f
 #define MAX_TAPS         500
 
 /* ── Helper: get today's date as string ───────────────────── */
@@ -44,8 +44,8 @@ static void print_tap_screen(int reg, int disc, float total, float last) {
     print_blank_row();
 
     /* Fare key guide */
-    print_row(FG_GREEN "  [1]  Regular Fare     +₱11.00" RESET);
-    print_row(FG_YELLOW "  [2]  Discounted Fare  +₱13.00" RESET);
+    print_row(FG_GREEN "  [1]  Regular Fare     +₱13.00" RESET);
+    print_row(FG_YELLOW "  [2]  Discounted Fare  +₱11.00" RESET);
     print_row(FG_RED    "  [3]  Undo Last Tap" RESET);
     print_row(FG_WHITE  "  [0]  Done / Exit Pad" RESET);
     print_blank_row();
@@ -97,8 +97,8 @@ void run_quicktap(void) {
     memset(&session, 0, sizeof(session));
     get_today(session.date, sizeof(session.date));
 
-    int  reg_count  = 0;   /* ₱11.00 taps */
-    int  disc_count = 0;   /* ₱13.00 taps */
+    int  reg_count  = 0;   /* ₱13.00 taps */
+    int  disc_count = 0;   /* ₱11.00 taps */
     float total     = 0.0f;
     float last      = 0.0f;
 
@@ -125,7 +125,7 @@ void run_quicktap(void) {
             }
 
         } else if (choice == 2) {
-            /* Discounted / extra fare */
+            /* Discounted fare */
             if (tap_top < MAX_TAPS) {
                 tap_history[tap_top++] = FARE_DISCOUNTED;
                 total      += FARE_DISCOUNTED;
@@ -180,10 +180,10 @@ void run_quicktap(void) {
     snprintf(buf, sizeof(buf), "  Date            : %s", session.date);
     print_row(buf);
 
-    snprintf(buf, sizeof(buf), "  Regular taps    : %d  (x P11.00)", reg_count);
+    snprintf(buf, sizeof(buf), "  Regular taps    : %d  (x P13.00)", reg_count);
     print_row(buf);
 
-    snprintf(buf, sizeof(buf), "  Discounted taps : %d  (x P13.00)", disc_count);
+    snprintf(buf, sizeof(buf), "  Discounted taps : %d  (x P11.00)", disc_count);
     print_row(buf);
 
     snprintf(buf, sizeof(buf), "  Total taps      : %d", session.tapCount);
