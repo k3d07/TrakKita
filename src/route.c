@@ -1,7 +1,7 @@
 /* ============================================================
  *  route.c - TrakKita Route Efficiency Recommender
  *  CS103 - Computer Programming 2 | Group 4
- *  Developer: Kim Eidrich B. Custodio
+ *  Developer: Kim Edrich B. Custodio
  * ============================================================ */
 
 #include <stdio.h>
@@ -105,7 +105,9 @@ void route_display_all(RouteNode routes[], int count) {
 
     printf("\n");
     print_top_border();
-    print_row(BOLD FG_CYAN "  ID  Route Name                 Km  Traffic" RESET);
+    print_row(BOLD FG_CYAN "               ALL AVAILABLE ROUTES               " RESET);
+    print_divider();
+    print_row(BOLD "  ID  Route Name                  Km  Traffic" RESET);
     print_divider();
 
     for (int i = 0; i < count; i++) {
@@ -202,7 +204,7 @@ void route_display_recommendation(RouteNode routes[], int count) {
 
     printf("\n");
     print_top_border();
-    print_row(BOLD FG_GREEN "  RECOMMENDED ROUTE TODAY" RESET);
+    print_row(BOLD FG_GREEN "             RECOMMENDED ROUTE TODAY" RESET);
     print_bottom_border();
 
     route_display_detail(best);
@@ -239,14 +241,12 @@ void route_menu(RouteNode routes[], int count) {
         switch (choice) {
             case 1:
                 clear_screen();
-                printf("\n" BOLD FG_CYAN "  ALL AVAILABLE ROUTES\n" RESET);
                 route_display_all(routes, count);
                 pause_prompt();
                 break;
 
             case 2: {
                 clear_screen();
-                printf("\n" BOLD FG_CYAN "  ROUTE DETAILS\n" RESET);
                 route_display_all(routes, count);
                 int id = get_int_input("Enter Route ID to view: ");
                 RouteNode *node = route_find_by_id(routes, count, id);

@@ -1,15 +1,7 @@
 /* ============================================================
- *  quicktap.c — Quick-Tap Fare Pad
+ *  quicktap.c - Quick-Tap Fare Pad
  *  CS103 - Computer Programming 2 | Group 4
- *
- *  Member: Kile Nicandro A. Roxas
- *
- *  Description:
- *    Lets the driver quickly tally fares by pressing keys.
- *    Key 1 → adds ₱13.00 (regular fare)
- *    Key 2 → adds ₱11.00 (discounted fare)
- *    Key 3 → undo last tap
- *    Key 0 → done / exit pad
+ *  Developer: Kile Nicandro A. Roxas
  * ============================================================ */
 
 #include <stdio.h>
@@ -38,13 +30,13 @@ static void print_tap_screen(int reg, int disc, float total, float last) {
     clear_screen();
     printf("\n");
     print_top_border();
-    print_row(BOLD FG_CYAN "   Quick-Tap Fare Pad   " RESET);
-    print_row(DIM "  Kile Nicandro A. Roxas | Feature 5  " RESET);
+    print_row(BOLD FG_YELLOW
+              "              [5] QUICK-TAP FARE PAD              "
+              RESET);
     print_divider();
     print_blank_row();
 
-    /* Fare key guide */
-    print_row(FG_GREEN "  [1]  Regular Fare     +₱13.00" RESET);
+    print_row(FG_GREEN  "  [1]  Regular Fare     +₱13.00" RESET);
     print_row(FG_YELLOW "  [2]  Discounted Fare  +₱11.00" RESET);
     print_row(FG_RED    "  [3]  Undo Last Tap" RESET);
     print_row(FG_WHITE  "  [0]  Done / Exit Pad" RESET);
@@ -52,26 +44,25 @@ static void print_tap_screen(int reg, int disc, float total, float last) {
     print_divider();
     print_blank_row();
 
-    /* Live counters */
-    char buf[60];
+    char buf[96];
 
-    snprintf(buf, sizeof(buf), "  Regular  taps  : %d", reg);
+    snprintf(buf, sizeof(buf), "  Regular taps    : %d", reg);
     print_row(buf);
 
-    snprintf(buf, sizeof(buf), "  Discount taps  : %d", disc);
+    snprintf(buf, sizeof(buf), "  Discounted taps : %d", disc);
     print_row(buf);
 
-    snprintf(buf, sizeof(buf), "  Total taps     : %d", reg + disc);
+    snprintf(buf, sizeof(buf), "  Total taps      : %d", reg + disc);
     print_row(buf);
 
     print_blank_row();
 
     if (last > 0.0f) {
         snprintf(buf, sizeof(buf),
-                 FG_GREEN "  Last added     : +P%.2f" RESET, last);
+                 FG_GREEN "  Last added     : +₱%.2f" RESET, last);
     } else if (last < 0.0f) {
         snprintf(buf, sizeof(buf),
-                 FG_RED "  Last action    : Undo (P%.2f removed)" RESET,
+                 FG_RED "  Last action    : Undo (₱%.2f removed)" RESET,
                  -last);
     } else {
         snprintf(buf, sizeof(buf),
@@ -83,7 +74,7 @@ static void print_tap_screen(int reg, int disc, float total, float last) {
     print_divider();
 
     snprintf(buf, sizeof(buf),
-             BOLD FG_CYAN "  TOTAL COLLECTED: P%.2f" RESET, total);
+             BOLD FG_CYAN "  TOTAL COLLECTED : ₱%.2f" RESET, total);
     print_row(buf);
 
     print_blank_row();
@@ -97,10 +88,10 @@ void run_quicktap(void) {
     memset(&session, 0, sizeof(session));
     get_today(session.date, sizeof(session.date));
 
-    int  reg_count  = 0;   /* ₱13.00 taps */
-    int  disc_count = 0;   /* ₱11.00 taps */
-    float total     = 0.0f;
-    float last      = 0.0f;
+    int   reg_count  = 0;   /* ₱13.00 taps */
+    int   disc_count = 0;   /* ₱11.00 taps */
+    float total      = 0.0f;
+    float last       = 0.0f;
 
     /* Undo stack — stores the value of each tap so we can subtract it */
     float tap_history[MAX_TAPS];
@@ -113,7 +104,6 @@ void run_quicktap(void) {
         choice = get_int_input("  Tap a key (1 / 2 / 3 / 0): ");
 
         if (choice == 1) {
-            /* Regular fare */
             if (tap_top < MAX_TAPS) {
                 tap_history[tap_top++] = FARE_REGULAR;
                 total      += FARE_REGULAR;
@@ -125,7 +115,6 @@ void run_quicktap(void) {
             }
 
         } else if (choice == 2) {
-            /* Discounted fare */
             if (tap_top < MAX_TAPS) {
                 tap_history[tap_top++] = FARE_DISCOUNTED;
                 total      += FARE_DISCOUNTED;
@@ -137,7 +126,6 @@ void run_quicktap(void) {
             }
 
         } else if (choice == 3) {
-            /* Undo last tap */
             if (tap_top > 0) {
                 float removed = tap_history[--tap_top];
                 total -= removed;
@@ -154,7 +142,6 @@ void run_quicktap(void) {
             }
 
         } else if (choice == 0) {
-            /* Exit pad */
             break;
 
         } else {
@@ -171,19 +158,21 @@ void run_quicktap(void) {
     clear_screen();
     printf("\n");
     print_top_border();
-    print_row(BOLD FG_CYAN "   Quick-Tap Session Summary   " RESET);
+    print_row(BOLD FG_YELLOW
+              "             QUICK-TAP SESSION SUMMARY            "
+              RESET);
     print_divider();
     print_blank_row();
 
-    char buf[60];
+    char buf[96];
 
     snprintf(buf, sizeof(buf), "  Date            : %s", session.date);
     print_row(buf);
 
-    snprintf(buf, sizeof(buf), "  Regular taps    : %d  (x P13.00)", reg_count);
+    snprintf(buf, sizeof(buf), "  Regular taps    : %d  (x ₱13.00)", reg_count);
     print_row(buf);
 
-    snprintf(buf, sizeof(buf), "  Discounted taps : %d  (x P11.00)", disc_count);
+    snprintf(buf, sizeof(buf), "  Discounted taps : %d  (x ₱11.00)", disc_count);
     print_row(buf);
 
     snprintf(buf, sizeof(buf), "  Total taps      : %d", session.tapCount);
@@ -193,7 +182,7 @@ void run_quicktap(void) {
     print_divider();
 
     snprintf(buf, sizeof(buf),
-             BOLD FG_GREEN "  TOTAL COLLECTED : P%.2f" RESET,
+             BOLD FG_GREEN "  TOTAL COLLECTED : ₱%.2f" RESET,
              session.totalCollected);
     print_row(buf);
 
