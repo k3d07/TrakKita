@@ -20,13 +20,9 @@
 #include "structs.h"
 #include "route.h"
 #include "quicktap.h"
-
-/* Forward declarations for teammate modules */
-/* Uncomment as teammates finish their modules:
 #include "profit.h"
 #include "fuel.h"
-#include "breakeven.h"
-*/
+#include "fileio.h"
 
 /* ============================================================
  *  JEEPNEY ASCII ANIMATION
@@ -206,8 +202,8 @@ static void print_main_menu(void) {
     print_divider();
     print_blank_row();
 
-    print_row(FG_WHITE "  [1]  Daily Profit / Loss Calculator" RESET);
-    print_row(FG_WHITE "  [2]  Fuel Consumption Log (7-Day)" RESET);
+    print_row(FG_GREEN "  [1]  Daily Profit / Loss Calculator" RESET);
+    print_row(FG_GREEN "  [2]  Fuel Consumption Log (7-Day)" RESET);
     print_row(FG_GREEN "  [3]  Route Efficiency Recommender" RESET);
     print_row(FG_WHITE "  [4]  Fare-to-Fuel Break-Even Simulator" RESET);
     print_row(FG_GREEN "  [5]  Quick-Tap Fare Pad" RESET);
@@ -221,23 +217,6 @@ static void print_main_menu(void) {
     print_bottom_border();
 }
 
-/* ============================================================
- *  STUB FUNCTIONS - teammates fill these in
- * ============================================================ */
-static void run_profit_calculator(void) {
-    clear_screen();
-    printf(FG_YELLOW "\n  [Feature 1] Daily Profit/Loss Calculator\n");
-    printf(DIM "  - Not yet implemented. Assigned to: ________\n" RESET);
-    pause_prompt();
-}
-
-static void run_fuel_log(void) {
-    clear_screen();
-    printf(FG_YELLOW "\n  [Feature 2] Fuel Consumption Log\n");
-    printf(DIM "  - Not yet implemented. Assigned to: ________\n" RESET);
-    pause_prompt();
-}
-
 static void run_breakeven(void) {
     clear_screen();
     printf(FG_YELLOW "\n  [Feature 4] Break-Even Simulator\n");
@@ -245,10 +224,11 @@ static void run_breakeven(void) {
     pause_prompt();
 }
 
-static void save_and_exit(void) {
+static void save_and_exit(DaySummary days[], int day_count,
+                          FuelEntry  fuel[], int fuel_count) {
     clear_screen();
     printf("\n" FG_GREEN "  Saving records to puv_records.txt...\n" RESET);
-    /* TODO: call fileio_save_all() when fileio.c is implemented */
+    fileio_save(days, day_count, fuel, fuel_count);
     sleep_ms(800);
     printf(FG_CYAN "  Salamat! Ingat sa daan, driver!\n\n" RESET);
     sleep_ms(600);
@@ -268,8 +248,16 @@ int main(void) {
     animate_intro();
 
     /* Initialize data */
-    RouteNode routes[ROUTE_COUNT];
+    RouteNode  routes[ROUTE_COUNT];
     route_init(routes, ROUTE_COUNT);
+
+    DaySummary day_summaries[MAX_DAY_SUMMARIES];
+    int        day_count = 0;
+
+    FuelEntry  fuel_entries[MAX_FUEL_ENTRIES];
+    int        fuel_count = 0;
+
+    fileio_load(day_summaries, &day_count, fuel_entries, &fuel_count);
 
     /* Main loop */
     int choice = 0;
@@ -278,12 +266,13 @@ int main(void) {
         choice = get_int_input("Enter your choice: ");
 
         switch (choice) {
-            case 1: run_profit_calculator();           break;
-            case 2: run_fuel_log();                    break;
+            case 1: profit_menu(day_summaries, &day_count); break;
+            case 2: fuel_menu(fuel_entries, &fuel_count);   break;
             case 3: route_menu(routes, ROUTE_COUNT);   break;
             case 4: run_breakeven();                   break;
             case 5: run_quicktap();                    break;
-            case 6: save_and_exit();                   break;
+            case 6: save_and_exit(day_summaries, day_count,
+                                   fuel_entries, fuel_count); break;
             default:
                 printf(FG_RED "\n  Invalid choice. Please try again.\n" RESET);
                 sleep_ms(700);

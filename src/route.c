@@ -9,6 +9,9 @@
 #include "route.h"
 #include "utils.h"
 
+static float g_diesel_price = DIESEL_PRICE_PER_LITER;
+static float g_fuel_per_km  = BASE_FUEL_PER_KM;
+
 typedef struct {
     int   id;
     char  name[50];
@@ -16,17 +19,19 @@ typedef struct {
     float trafficFactor;
     float avgFarePerTrip;
     int   tripsPerDay;
+    float boundaryFee;
 } RouteSeed;
 
 static const RouteSeed ROUTE_SEEDS[] = {
-    { 1, "Legazpi City - Daraga",           14.5f, 1.3f, 180.0f, 8 },
-    { 2, "Legazpi - Sto. Domingo",          18.0f, 1.1f, 210.0f, 7 },
-    { 3, "Legazpi - Tabaco City",           32.0f, 1.5f, 420.0f, 4 },
-    { 4, "Daraga - Camalig",                12.0f, 1.2f, 150.0f, 9 },
-    { 5, "Legazpi - Ligao City",            28.0f, 1.4f, 380.0f, 5 },
-    { 6, "Sto. Domingo - Legazpi Coastal",  22.0f, 1.0f, 260.0f, 6 },
-    { 7, "Legazpi - Rapu-Rapu Ferry+Jeep",  35.0f, 1.6f, 500.0f, 3 },
-    { 8, "Daraga - Guinobatan",             20.0f, 1.3f, 240.0f, 6 },
+    /*  id  name                              km     traffic  fare    trips  boundary */
+    {  1, "Legazpi City - Daraga",           14.5f, 1.3f, 180.0f, 8, 500.0f },
+    {  2, "Legazpi - Sto. Domingo",          18.0f, 1.1f, 210.0f, 7, 550.0f },
+    {  3, "Legazpi - Tabaco City",           32.0f, 1.5f, 420.0f, 4, 700.0f },
+    {  4, "Daraga - Camalig",                12.0f, 1.2f, 150.0f, 9, 450.0f },
+    {  5, "Legazpi - Ligao City",            28.0f, 1.4f, 380.0f, 5, 650.0f },
+    {  6, "Sto. Domingo - Legazpi Coastal",  22.0f, 1.0f, 260.0f, 6, 550.0f },
+    {  7, "Legazpi - Rapu-Rapu Ferry+Jeep",  35.0f, 1.6f, 500.0f, 3, 800.0f },
+    {  8, "Daraga - Guinobatan",             20.0f, 1.3f, 240.0f, 6, 600.0f },
 };
 
 void route_init(RouteNode routes[], int count) {
@@ -39,20 +44,21 @@ void route_init(RouteNode routes[], int count) {
         routes[i].baseFuelPerKm = BASE_FUEL_PER_KM;
         routes[i].avgFarePerTrip = ROUTE_SEEDS[i].avgFarePerTrip;
         routes[i].tripsPerDay = ROUTE_SEEDS[i].tripsPerDay;
+        routes[i].boundaryFee = ROUTE_SEEDS[i].boundaryFee;
     }
 }
 
 float route_estimated_fuel_cost(RouteNode *node) {
     float liters_per_trip = node->distanceKm
-                          * node->baseFuelPerKm
+                          * g_fuel_per_km
                           * node->trafficFactor;
     float total_liters = liters_per_trip * node->tripsPerDay;
-    return total_liters * DIESEL_PRICE_PER_LITER;
+    return total_liters * g_diesel_price;
 }
 
 float route_estimated_net_income(RouteNode *node) {
     float gross = node->avgFarePerTrip * (float)node->tripsPerDay;
-    return gross - route_estimated_fuel_cost(node);
+    return gross - route_estimated_fuel_cost(node) - node->boundaryFee;
 }
 
 float route_efficiency_score(RouteNode *node) {
@@ -182,6 +188,9 @@ void route_display_detail(RouteNode *node) {
     snprintf(row, sizeof(row), "  Est. Fuel Cost : PHP %.2f", fuel_cost);
     print_row(row);
 
+    snprintf(row, sizeof(row), "  Boundary Fee   : PHP %.2f", node->boundaryFee);
+    print_row(row);
+
     snprintf(row, sizeof(row), "%s  Net Income    : PHP %.2f" RESET, net_color, net);
     print_row(row);
 
@@ -217,6 +226,47 @@ void route_display_recommendation(RouteNode routes[], int count) {
 
 void route_menu(RouteNode routes[], int count) {
     int choice = 0;
+
+    /* Ask driver for today's figures before showing the menu */
+    {
+        char buf[96];
+        clear_screen();
+        printf("\n");
+        print_top_border();
+        print_row(BOLD FG_YELLOW
+                  "         [3] ROUTE EFFICIENCY RECOMMENDER         "
+                  RESET);
+        print_divider();
+        print_blank_row();
+        print_row(BOLD "  Set Your Vehicle Info" RESET);
+        print_blank_row();
+
+        snprintf(buf, sizeof(buf),
+                 "  Diesel price   : " FG_CYAN "PHP %.2f / L" RESET,
+                 g_diesel_price);
+        print_row(buf);
+
+        snprintf(buf, sizeof(buf),
+                 "  Fuel use       : " FG_CYAN "%.3f L / km" RESET,
+                 g_fuel_per_km);
+        print_row(buf);
+
+        print_blank_row();
+        print_row(DIM "  Enter 0 for any field to keep current value." RESET);
+        print_blank_row();
+        print_bottom_border();
+        printf("\n");
+
+        float new_price = get_float_input("Today's diesel price (PHP/L): ");
+        if (new_price > 0.0f) {
+            g_diesel_price = new_price;
+        }
+
+        float new_fuel = get_float_input("Your vehicle's fuel use  (L/km): ");
+        if (new_fuel > 0.0f) {
+            g_fuel_per_km = new_fuel;
+        }
+    }
 
     do {
         clear_screen();

@@ -15,16 +15,16 @@ BUILDDIR = build
 SRCS = $(SRCDIR)/main.c \
        $(SRCDIR)/utils.c \
        $(SRCDIR)/route.c \
-       $(SRCDIR)/quicktap.c
-
-# Add teammate files here as they are completed, for example:
-# SRCS += $(SRCDIR)/profit.c $(SRCDIR)/fuel.c
+       $(SRCDIR)/quicktap.c \
+       $(SRCDIR)/profit.c \
+       $(SRCDIR)/fuelConsump.c \
+       $(SRCDIR)/fileio.c
 
 .PHONY: all clean run
 
 all: $(TARGET)
 
-$(TARGET): $(SRCS) $(INCDIR)/structs.h $(INCDIR)/utils.h $(INCDIR)/route.h $(INCDIR)/quicktap.h
+$(TARGET): $(SRCS) $(INCDIR)/structs.h $(INCDIR)/utils.h $(INCDIR)/route.h $(INCDIR)/quicktap.h $(INCDIR)/profit.h $(INCDIR)/fuel.h $(INCDIR)/fileio.h
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(SRCS)
 
 run: all

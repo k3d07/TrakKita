@@ -24,6 +24,7 @@ typedef struct RouteNode {
     float baseFuelPerKm;   /* liters consumed per km             */
     float avgFarePerTrip;  /* average fare income per full trip  */
     int   tripsPerDay;     /* estimated trips a driver can do    */
+    float boundaryFee;     /* daily boundary/rental fee (PHP)    */
 } RouteNode;
 
 /* ── Fuel Log Entry (used by fuel.c) ──────────────────────── */
