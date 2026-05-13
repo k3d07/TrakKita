@@ -2,9 +2,8 @@
 #define ROUTE_H
 
 /* ============================================================
- *  route.h — TrakKita Route Efficiency Recommender
+ *  route.h — Route Efficiency Recommender
  *  CS103 - Computer Programming 2 | Group 4
- *  Developer: Kim Eidrich B. Custodio
  * ============================================================ */
 
 #include "structs.h"

@@ -1,13 +1,6 @@
 /* ============================================================
  *  main.c - TrakKita Entry Point & Main Menu
  *  CS103 - Computer Programming 2 | Group 4
- *
- *  Members:
- *    Kim Eidrich B. Custodio   - Route Efficiency Recommender
- *    Cyril Gian T. Anonuevo    - [assign feature]
- *    Keith Bryan O. Belmonte   - [assign feature]
- *    Kile Nicandro A. Roxas    - [assign feature]
- *    Clarence James D. Gelua   - [assign feature]
  * ============================================================ */
 
 #include <stdio.h>
@@ -23,6 +16,7 @@
 #include "profit.h"
 #include "fuel.h"
 #include "fileio.h"
+#include "breakeven.h"
 
 /* ============================================================
  *  JEEPNEY ASCII ANIMATION
@@ -205,7 +199,7 @@ static void print_main_menu(void) {
     print_row(FG_GREEN "  [1]  Daily Profit / Loss Calculator" RESET);
     print_row(FG_GREEN "  [2]  Fuel Consumption Log (7-Day)" RESET);
     print_row(FG_GREEN "  [3]  Route Efficiency Recommender" RESET);
-    print_row(FG_WHITE "  [4]  Fare-to-Fuel Break-Even Simulator" RESET);
+    print_row(FG_GREEN "  [4]  Fare-to-Fuel Break-Even Simulator" RESET);
     print_row(FG_GREEN "  [5]  Quick-Tap Fare Pad" RESET);
 
     print_blank_row();
@@ -217,12 +211,6 @@ static void print_main_menu(void) {
     print_bottom_border();
 }
 
-static void run_breakeven(void) {
-    clear_screen();
-    printf(FG_YELLOW "\n  [Feature 4] Break-Even Simulator\n");
-    printf(DIM "  - Not yet implemented. Assigned to: ________\n" RESET);
-    pause_prompt();
-}
 
 static void save_and_exit(DaySummary days[], int day_count,
                           FuelEntry  fuel[], int fuel_count) {
@@ -269,7 +257,7 @@ int main(void) {
             case 1: profit_menu(day_summaries, &day_count); break;
             case 2: fuel_menu(fuel_entries, &fuel_count);   break;
             case 3: route_menu(routes, ROUTE_COUNT);   break;
-            case 4: run_breakeven();                   break;
+            case 4: breakeven_menu();                  break;
             case 5: run_quicktap();                    break;
             case 6: save_and_exit(day_summaries, day_count,
                                    fuel_entries, fuel_count); break;

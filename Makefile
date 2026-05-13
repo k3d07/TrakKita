@@ -18,13 +18,14 @@ SRCS = $(SRCDIR)/main.c \
        $(SRCDIR)/quicktap.c \
        $(SRCDIR)/profit.c \
        $(SRCDIR)/fuelConsump.c \
-       $(SRCDIR)/fileio.c
+       $(SRCDIR)/fileio.c \
+       $(SRCDIR)/breakeven.c
 
 .PHONY: all clean run
 
 all: $(TARGET)
 
-$(TARGET): $(SRCS) $(INCDIR)/structs.h $(INCDIR)/utils.h $(INCDIR)/route.h $(INCDIR)/quicktap.h $(INCDIR)/profit.h $(INCDIR)/fuel.h $(INCDIR)/fileio.h
+$(TARGET): $(SRCS) $(INCDIR)/structs.h $(INCDIR)/utils.h $(INCDIR)/route.h $(INCDIR)/quicktap.h $(INCDIR)/profit.h $(INCDIR)/fuel.h $(INCDIR)/fileio.h $(INCDIR)/breakeven.h
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(SRCS)
 
 run: all

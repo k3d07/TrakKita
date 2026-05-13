@@ -1,7 +1,6 @@
 /* ============================================================
- *  route.c - TrakKita Route Efficiency Recommender
+ *  route.c - Route Efficiency Recommender
  *  CS103 - Computer Programming 2 | Group 4
- *  Developer: Kim Edrich B. Custodio
  * ============================================================ */
 
 #include <stdio.h>

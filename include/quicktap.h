@@ -4,8 +4,6 @@
 /* ============================================================
  *  quicktap.h — Quick-Tap Fare Pad
  *  CS103 - Computer Programming 2 | Group 4
- *
- *  Member: Kile Nicandro A. Roxas
  * ============================================================ */
 
 #include "structs.h"

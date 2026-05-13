@@ -1,7 +1,6 @@
 /* ============================================================
  *  quicktap.c - Quick-Tap Fare Pad
  *  CS103 - Computer Programming 2 | Group 4
- *  Developer: Kile Nicandro A. Roxas
  * ============================================================ */
 
 #include <stdio.h>

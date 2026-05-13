@@ -8,11 +8,11 @@ Built for CS103 - Computer Programming 2, Group 4.
 
 | # | Feature | Status |
 |---|---------|--------|
-| 1 | Daily Profit / Loss Calculator | Stub |
-| 2 | Fuel Consumption Log (7-Day) | Stub |
+| 1 | Daily Profit / Loss Calculator | Implemented |
+| 2 | Fuel Consumption Log (7-Day) | Implemented |
 | 3 | Route Efficiency Recommender | Implemented |
-| 4 | Fare-to-Fuel Break-Even Simulator | Stub |
-| 5 | Quick-Tap Fare Pad | Stub |
+| 4 | Fare-to-Fuel Break-Even Simulator | Implemented |
+| 5 | Quick-Tap Fare Pad | Implemented |
 
 Feature 3 uses a plain array of `RouteNode` values. It does not use linked lists.
 
