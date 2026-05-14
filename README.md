@@ -11,10 +11,10 @@ Built for CS103 - Computer Programming 2, Group 4.
 | Name | Feature |
 |------|---------|
 | Kim Eidrich B. Custodio | Route Efficiency Recommender |
-| Cyril Gian T. Anonuevo | Daily Profit / Loss Calculator |
+| Cyril Gian T. Anonuevo | Fare-to-Fuel Break-Even Simulator |
 | Keith Bryan O. Belmonte | Fuel Consumption Log |
 | Kile Nicandro A. Roxas | Quick-Tap Fare Pad |
-| Clarence James D. Gelua | Fare-to-Fuel Break-Even Simulator |
+| Clarence James D. Gelua | Daily Profit / Loss Calculator |
 
 ## Features
 
