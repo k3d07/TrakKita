@@ -18,6 +18,13 @@
 #define MAX_TAPS         500
 
 /* ── Helper: get today's date as string ───────────────────── */
+/* get_today
+ * ---------
+ * Writes today's date as "YYYY-MM-DD" into the buffer. Used to stamp
+ * the QuickTap session summary.
+ * Params : buf  — destination char buffer
+ *          size — capacity of buf in bytes
+ */
 static void get_today(char *buf, int size) {
     time_t t = time(NULL);
     struct tm *tm_info = localtime(&t);
@@ -25,6 +32,19 @@ static void get_today(char *buf, int size) {
 }
 
 /* ── Helper: print the tap dashboard ─────────────────────── */
+/* print_tap_screen
+ * ----------------
+ * Re-renders the entire Quick-Tap dashboard after every keypress:
+ * the action keys (1/2/3/0), live counters for regular and
+ * discounted taps, the last action (last added fare in green, undo in
+ * red, or "--" when idle), and the running total at the bottom.
+ * Called repeatedly inside run_quicktap()'s loop.
+ * Params : reg   — running count of regular fare taps
+ *          disc  — running count of discounted fare taps
+ *          total — total pesos collected so far
+ *          last  — last fare amount (positive=added, negative=undone,
+ *                  zero=no recent action)
+ */
 static void print_tap_screen(int reg, int disc, float total, float last) {
     clear_screen();
     printf("\n");
@@ -82,6 +102,21 @@ static void print_tap_screen(int reg, int disc, float total, float last) {
 }
 
 /* ── Main Feature Function ────────────────────────────────── */
+/* run_quicktap
+ * ------------
+ * Drives the Quick-Tap Fare Pad — a fast keypad-style screen the
+ * driver can tap while collecting fares. Loops until the user picks 0.
+ * Key handling:
+ *   [1] add ₱13 (regular)         → push to undo stack, bump total
+ *   [2] add ₱11 (discounted)      → push to undo stack, bump total
+ *   [3] undo last tap             → pop from stack, subtract from total
+ *   [0] end session and exit
+ * The undo "stack" (tap_history) is a simple array indexed by tap_top;
+ * each tap pushes its fare value so undo can subtract the exact amount,
+ * even when regular and discounted taps are mixed. Caps at MAX_TAPS to
+ * prevent overflow. When the user exits, prints a session summary with
+ * date, tap counts, and total collected.
+ */
 void run_quicktap(void) {
     QuickTapSession session;
     memset(&session, 0, sizeof(session));

@@ -11,6 +11,14 @@
 #include "structs.h"
 #include "profit.h"
 
+/* get_today
+ * ---------
+ * Writes today's date as "YYYY-MM-DD" into the provided buffer using
+ * the system clock. Used to timestamp new daily P/L records so the
+ * history list shows when each entry was logged.
+ * Params : buf  — destination char buffer
+ *          size — capacity of buf in bytes
+ */
 static void get_today(char *buf, int size) {
     time_t t = time(NULL);
     struct tm *tm_info = localtime(&t);
@@ -18,6 +26,19 @@ static void get_today(char *buf, int size) {
 }
 
 /* ── Calculate and record today's P/L ────────────────────── */
+/* profit_calculate
+ * ----------------
+ * Adds today's profit/loss entry to days[] after asking the user for
+ * total fares, fuel cost, and boundary fee.
+ * Formula: netProfit = totalFares − fuelCost − boundaryFee
+ * Uses a rolling-window strategy: when the array is full it drops the
+ * oldest record (shifts everything left by one) so we always keep the
+ * most recent days. Shows a red NET LOSS warning if the result is
+ * negative; otherwise prints a green NET PROFIT line.
+ * Params : days  — array of DaySummary records
+ *          count — pointer to the current number of records
+ *                  (incremented by 1 on success)
+ */
 static void profit_calculate(DaySummary days[], int *count) {
     /* Rolling window: drop oldest when full */
     if (*count >= MAX_DAY_SUMMARIES) {
@@ -94,6 +115,16 @@ static void profit_calculate(DaySummary days[], int *count) {
 }
 
 /* ── Display earnings history table ──────────────────────── */
+/* profit_display_history
+ * ----------------------
+ * Renders the saved daily P/L records as a numbered table (#, date,
+ * total fares, net profit). The net column is colored green if the
+ * day was profitable and red if it was a loss, so trends pop out
+ * visually. If there are no records yet, shows a friendly empty-state
+ * message instead of an empty table.
+ * Params : days  — array of DaySummary records
+ *          count — number of records currently stored
+ */
 static void profit_display_history(DaySummary days[], int count) {
     char row[96];
 
@@ -133,6 +164,15 @@ static void profit_display_history(DaySummary days[], int count) {
 }
 
 /* ── Menu ─────────────────────────────────────────────────── */
+/* profit_menu
+ * -----------
+ * Public entry point for the Daily Profit/Loss Calculator. Displays
+ * the sub-menu and dispatches to either profit_calculate() (option 1)
+ * or profit_display_history() (option 2). Loops until the user picks
+ * 0 to return to the main menu.
+ * Params : days  — array of DaySummary records
+ *          count — pointer to the current number of records
+ */
 void profit_menu(DaySummary days[], int *count) {
     int choice = 0;
 

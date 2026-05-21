@@ -11,6 +11,14 @@
 #include "structs.h"
 #include "fuel.h"
 
+/* get_today
+ * ---------
+ * Writes today's date as "YYYY-MM-DD" into the provided buffer using
+ * the system clock. Used to stamp each fuel entry with the day it
+ * was logged.
+ * Params : buf  — destination char buffer
+ *          size — capacity of buf in bytes
+ */
 static void get_today(char *buf, int size) {
     time_t t = time(NULL);
     struct tm *tm_info = localtime(&t);
@@ -18,6 +26,17 @@ static void get_today(char *buf, int size) {
 }
 
 /* ── Add a new fuel entry ─────────────────────────────────── */
+/* fuel_add
+ * --------
+ * Records a new fuel-up entry. Asks the user for liters filled and
+ * price per liter, then auto-computes totalCost = liters × price.
+ * Uses a rolling 7-day window: when entries[] is full it shifts the
+ * oldest entry out so the log always reflects the most recent week.
+ * Shows a green confirmation screen with the saved values.
+ * Params : entries — array of FuelEntry records
+ *          count   — pointer to the current number of entries
+ *                    (incremented by 1 on success)
+ */
 static void fuel_add(FuelEntry entries[], int *count) {
     /* Rolling window: drop oldest when full */
     if (*count >= MAX_FUEL_ENTRIES) {
@@ -73,6 +92,14 @@ static void fuel_add(FuelEntry entries[], int *count) {
 }
 
 /* ── Display 7-day log table ──────────────────────────────── */
+/* fuel_display_log
+ * ----------------
+ * Renders the saved fuel entries as a numbered table (#, date,
+ * liters, price/liter, total cost). Shows an empty-state message if
+ * no entries exist yet.
+ * Params : entries — array of FuelEntry records
+ *          count   — number of entries currently stored
+ */
 static void fuel_display_log(FuelEntry entries[], int count) {
     char row[96];
 
@@ -110,6 +137,18 @@ static void fuel_display_log(FuelEntry entries[], int count) {
 }
 
 /* ── Display summary statistics ───────────────────────────── */
+/* fuel_display_summary
+ * --------------------
+ * Computes and displays aggregate stats over all stored fuel entries:
+ *   - Total liters and total cost across the window
+ *   - Average liters and average cost per day
+ *   - Most-expensive day (red) and cheapest day (green), when count > 1
+ * Uses a single pass through the array to accumulate sums and track
+ * the indexes of the max and min entries. Helps the driver spot fuel-
+ * price spikes and budget for the week ahead.
+ * Params : entries — array of FuelEntry records
+ *          count   — number of entries currently stored
+ */
 static void fuel_display_summary(FuelEntry entries[], int count) {
     clear_screen();
     printf("\n");
@@ -177,6 +216,15 @@ static void fuel_display_summary(FuelEntry entries[], int count) {
 }
 
 /* ── Menu ─────────────────────────────────────────────────── */
+/* fuel_menu
+ * ---------
+ * Public entry point for the Fuel Consumption Log feature. Displays
+ * the sub-menu and dispatches to fuel_add(), fuel_display_log(), or
+ * fuel_display_summary() based on the user's choice. Loops until the
+ * user picks 0 to return to the main menu.
+ * Params : entries — array of FuelEntry records
+ *          count   — pointer to the current number of entries
+ */
 void fuel_menu(FuelEntry entries[], int *count) {
     int choice = 0;
 

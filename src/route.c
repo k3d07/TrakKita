@@ -36,18 +36,27 @@ typedef struct {
 } RouteSeed;
 
 static const RouteSeed ROUTE_SEEDS[] = {
-    {  1, "Legazpi City - Daraga",          14.5f, 1.3f, 180.0f, 8 },
-    {  2, "Legazpi - Sto. Domingo",         18.0f, 1.1f, 210.0f, 7 },
-    {  3, "Legazpi - Tabaco City",          32.0f, 1.5f, 420.0f, 4 },
-    {  4, "Daraga - Camalig",               12.0f, 1.2f, 150.0f, 9 },
-    {  5, "Legazpi - Ligao City",           28.0f, 1.4f, 380.0f, 5 },
-    {  6, "Sto. Domingo - Legazpi Coastal", 22.0f, 1.0f, 260.0f, 6 },
-    {  7, "Legazpi - Rapu-Rapu Ferry+Jeep", 35.0f, 1.6f, 500.0f, 3 },
-    {  8, "Daraga - Guinobatan",            20.0f, 1.3f, 240.0f, 6 },
+    {  1, "Legazpi City - Daraga",          14.5f, 1.3f,  195.0f, 8 },
+    {  2, "Legazpi - Sto. Domingo",         18.0f, 1.1f,  570.0f, 7 },
+    {  3, "Legazpi - Tabaco City",          32.0f, 1.5f,  950.0f, 4 },
+    {  4, "Daraga - Camalig",               12.0f, 1.2f,  250.0f, 9 },
+    {  5, "Legazpi - Ligao City",           28.0f, 1.4f,  680.0f, 5 },
+    {  6, "Sto. Domingo - Legazpi Coastal", 22.0f, 1.0f,  540.0f, 6 },
+    {  7, "Legazpi - Rapu-Rapu Ferry+Jeep", 35.0f, 1.6f, 1160.0f, 3 },
+    {  8, "Daraga - Guinobatan",            20.0f, 1.3f,  315.0f, 6 },
 };
 
 /* ── Initialization ───────────────────────────────────────── */
 
+/* route_init
+ * ----------
+ * Fills the caller's routes[] array with our 8 hard-coded routes
+ * (Legazpi area jeepney lines) by copying each field from ROUTE_SEEDS.
+ * Called once at program start so the rest of the program can work
+ * with RouteNode objects instead of touching the seed data directly.
+ * Params : routes — array to populate (size must be >= count)
+ *          count  — number of routes to initialize (use ROUTE_COUNT)
+ */
 void route_init(RouteNode routes[], int count) {
     for (int i = 0; i < count; i++) {
         routes[i].routeID       = ROUTE_SEEDS[i].id;
@@ -63,28 +72,78 @@ void route_init(RouteNode routes[], int count) {
 
 /* ── Core calculations ────────────────────────────────────── */
 
+/* route_estimated_fuel_cost
+ * -------------------------
+ * Computes the total daily fuel cost in pesos for one route.
+ * Formula: liters_per_trip = distanceKm × fuelPerKm × trafficFactor
+ *          cost            = liters_per_trip × tripsPerDay × dieselPrice
+ * The trafficFactor multiplier (1.0–1.6) accounts for extra fuel burned
+ * in stop-and-go driving on congested routes.
+ * Params : node — pointer to the RouteNode being evaluated
+ * Returns: estimated daily fuel cost in PHP
+ */
 float route_estimated_fuel_cost(RouteNode *node) {
     float liters = node->distanceKm * g_fuel_per_km * node->trafficFactor;
     return liters * (float)node->tripsPerDay * g_diesel_price;
 }
 
+/* route_estimated_net_income
+ * --------------------------
+ * Computes the driver's projected take-home pesos for one day on a
+ * given route.
+ * Formula: gross = avgFarePerTrip × tripsPerDay
+ *          net   = gross − fuel_cost − boundary_fee
+ * The boundary_fee is the daily rent the driver pays the vehicle owner
+ * (zero for owner-drivers).
+ * Params : node — pointer to the RouteNode being evaluated
+ * Returns: net income in PHP (may be negative if the route loses money)
+ */
 float route_estimated_net_income(RouteNode *node) {
     float gross = node->avgFarePerTrip * (float)node->tripsPerDay;
     return gross - route_estimated_fuel_cost(node) - g_boundary_fee;
 }
 
+/* route_efficiency_score
+ * ----------------------
+ * Returns "pesos earned per peso spent on fuel" — our headline metric
+ * for ranking routes. A score of 2.0 means the route returns ₱2 in
+ * profit for every ₱1 of fuel. Used by route_find_best().
+ * Guards against divide-by-zero when fuel cost is 0.
+ * Params : node — pointer to the RouteNode being evaluated
+ * Returns: efficiency ratio (net_income ÷ fuel_cost)
+ */
 float route_efficiency_score(RouteNode *node) {
     float fuel = route_estimated_fuel_cost(node);
     if (fuel <= 0.0f) return 0.0f;
     return route_estimated_net_income(node) / fuel;
 }
 
+/* route_find_by_id
+ * ----------------
+ * Linear search through routes[] looking for a matching routeID.
+ * Used when the user types a route number in the "View Route Details"
+ * menu so we can fetch and display that specific route.
+ * Params : routes — array of RouteNodes
+ *          count  — number of routes in the array
+ *          id     — routeID to search for (valid range: 1–8)
+ * Returns: pointer to the matching route, or NULL if not found
+ */
 RouteNode *route_find_by_id(RouteNode routes[], int count, int id) {
     for (int i = 0; i < count; i++)
         if (routes[i].routeID == id) return &routes[i];
     return NULL;
 }
 
+/* route_find_best
+ * ---------------
+ * Walks the entire routes[] array, computes the efficiency score of
+ * each one, and returns whichever has the highest score. This is the
+ * core of the recommendation feature — it tells the driver which
+ * route earns the most per peso of fuel under their current settings.
+ * Params : routes — array of RouteNodes
+ *          count  — number of routes in the array
+ * Returns: pointer to the best route, or NULL if the array is empty
+ */
 RouteNode *route_find_best(RouteNode routes[], int count) {
     RouteNode *best = NULL;
     float top = -9999.0f;
@@ -97,6 +156,14 @@ RouteNode *route_find_best(RouteNode routes[], int count) {
 
 /* ── Helpers ──────────────────────────────────────────────── */
 
+/* traffic_label
+ * -------------
+ * Maps a numeric trafficFactor to a human-readable word so the UI
+ * shows "Heavy" instead of "1.5" when displaying route details.
+ * Buckets: ≤1.1 Light, ≤1.3 Moderate, ≤1.5 Heavy, otherwise Very Heavy.
+ * Params : factor — the route's trafficFactor multiplier
+ * Returns: a const string label (do not free)
+ */
 static const char *traffic_label(float factor) {
     if (factor <= 1.1f) return "Light";
     if (factor <= 1.3f) return "Moderate";
@@ -106,6 +173,14 @@ static const char *traffic_label(float factor) {
 
 /* ── Setup wizard ─────────────────────────────────────────── */
 
+/* setup_header
+ * ------------
+ * Draws the heading shown at the top of every step in the vehicle
+ * setup wizard ("Step X of 3 — description"). Keeps the wizard
+ * looking consistent across all three screens.
+ * Params : step — step number (1, 2, or 3)
+ *          desc — short description of what the step asks
+ */
 static void setup_header(int step, const char *desc) {
     char buf[128];
     clear_screen();
@@ -122,6 +197,17 @@ static void setup_header(int step, const char *desc) {
     print_blank_row();
 }
 
+/* route_setup
+ * -----------
+ * 3-step wizard that personalizes the calculations for the driver:
+ *   Step 1 — vehicle type (sets g_fuel_per_km from PUV_PRESETS, or
+ *            lets the user enter L/km manually)
+ *   Step 2 — ownership   (sets g_boundary_fee to 0 or the driver's
+ *            actual daily rent)
+ *   Step 3 — fuel price  (sets g_diesel_price for today)
+ * Finally shows a "Settings Saved" summary and flags g_setup_done so
+ * the wizard doesn't auto-run again next time route_menu() opens.
+ */
 static void route_setup(void) {
 
     /* Step 1: Vehicle type → sets L/km ─────────────────────── */
@@ -206,6 +292,15 @@ static void route_setup(void) {
 
 /* ── Display: all routes ─────────────────────────────────── */
 
+/* route_display_all
+ * -----------------
+ * Prints a compact table of every available route — ID, name,
+ * distance, and net income for the day. The net income is colored
+ * green if positive and red if negative so the driver can see
+ * profitable vs. losing routes at a glance.
+ * Params : routes — array of RouteNodes
+ *          count  — number of routes in the array
+ */
 void route_display_all(RouteNode routes[], int count) {
     char row[96];
 
@@ -233,6 +328,15 @@ void route_display_all(RouteNode routes[], int count) {
 
 /* ── Display: route detail ───────────────────────────────── */
 
+/* route_display_detail
+ * --------------------
+ * Shows a full breakdown for a single route: distance, traffic level,
+ * trips per day, fare, then the computed gross/fuel/boundary/net
+ * figures. Includes a 20-segment efficiency bar built from Unicode
+ * block characters (█ filled, ░ empty) so the score is visual.
+ * Safely returns with an error message if `node` is NULL.
+ * Params : node — the RouteNode to display (may be NULL)
+ */
 void route_display_detail(RouteNode *node) {
     if (!node) {
         printf(FG_RED "  Route not found.\n" RESET);
@@ -309,6 +413,15 @@ void route_display_detail(RouteNode *node) {
 
 /* ── Display: best route recommendation ─────────────────── */
 
+/* route_display_recommendation
+ * ----------------------------
+ * Asks route_find_best() for today's top route, then renders its
+ * full detail card under a green "RECOMMENDED ROUTE TODAY" banner,
+ * followed by a tip line showing the projected take-home pesos.
+ * This is the headline output of the entire feature.
+ * Params : routes — array of RouteNodes
+ *          count  — number of routes in the array
+ */
 void route_display_recommendation(RouteNode routes[], int count) {
     RouteNode *best = route_find_best(routes, count);
     if (!best) {
@@ -331,6 +444,16 @@ void route_display_recommendation(RouteNode routes[], int count) {
 
 /* ── Menu ─────────────────────────────────────────────────── */
 
+/* route_menu
+ * ----------
+ * Public entry point for the Route Efficiency Recommender. On the
+ * first call it auto-launches the setup wizard so the calculations
+ * reflect the driver's actual vehicle and fuel price. Then it loops
+ * the sub-menu (view all / view detail / recommend / update settings)
+ * until the user picks 0 to go back to the main menu.
+ * Params : routes — array of RouteNodes (populated by route_init)
+ *          count  — number of routes (use ROUTE_COUNT)
+ */
 void route_menu(RouteNode routes[], int count) {
     if (!g_setup_done)
         route_setup();

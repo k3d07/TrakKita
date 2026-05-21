@@ -14,6 +14,25 @@
 
 /* ── Core Calculation ────────────────────────────────────── */
 
+/* breakeven_calculate
+ * -------------------
+ * Heart of the simulator — turns one set of operating inputs into a
+ * complete set of break-even results.
+ * Formulas:
+ *   fuel_cost          = (distance ÷ km_per_liter) × fuel_price
+ *   total_cost         = fuel + boundary + maintenance + wages + other
+ *   total_passengers   = trips_per_day × pax_per_trip
+ *   gross_revenue      = total_passengers × fare_per_pax
+ *   net_profit         = gross_revenue − total_cost
+ *   breakeven_pax      = ⌈total_cost ÷ fare_per_pax⌉      (whole pax)
+ *   breakeven_per_trip = ⌈breakeven_pax ÷ trips_per_day⌉  (whole pax)
+ *   coverage_pct       = (gross_revenue ÷ total_cost) × 100
+ * ceilf() is used so passenger counts round up — half a passenger
+ * doesn't exist, and rounding down would understate the requirement.
+ * Validates inputs > 0 to avoid divide-by-zero.
+ * Params : in — pointer to a populated BreakevenInputs
+ * Returns: a BreakevenResults struct (all-zero if inputs are invalid)
+ */
 static BreakevenResults breakeven_calculate(const BreakevenInputs *in) {
     BreakevenResults r = {0};
 
@@ -38,36 +57,76 @@ static BreakevenResults breakeven_calculate(const BreakevenInputs *in) {
 /* ── Preset Scenarios ────────────────────────────────────── */
 
 /* Traditional Jeepney — before the oil price hike (diesel PHP 58/L) */
+/* breakeven_scenario_jeepney_pre_hike
+ * -----------------------------------
+ * Preset for a traditional jeepney BEFORE the oil price hike, when
+ * diesel was around PHP 58/L. Used as a baseline so the user can
+ * compare to the "hike" scenarios and see the impact on profitability.
+ * Returns: a fully populated BreakevenInputs
+ */
 static BreakevenInputs breakeven_scenario_jeepney_pre_hike(void) {
     BreakevenInputs in = {58.0f, 4.5f, 120.0f, 10, 900.0f, 120.0f, 0.0f, 70.0f, 13.0f, 20};
     return in;
 }
 
 /* Traditional Jeepney — during the oil hike (diesel PHP 85/L) */
+/* breakeven_scenario_jeepney_hike
+ * -------------------------------
+ * Same traditional jeepney as the pre-hike preset, but with diesel at
+ * PHP 85/L and slightly fewer trips per day (drivers cut back when
+ * costs spike). Demonstrates how fuel inflation pushes the break-even
+ * passenger count up.
+ * Returns: a fully populated BreakevenInputs
+ */
 static BreakevenInputs breakeven_scenario_jeepney_hike(void) {
     BreakevenInputs in = {85.0f, 4.5f, 120.0f, 10, 900.0f, 150.0f, 0.0f, 80.0f, 14.0f, 17};
     return in;
 }
 
 /* Modern/e-jeepney — better fuel efficiency (~9 km/L), higher boundary */
+/* breakeven_scenario_modern_jeepney
+ * ---------------------------------
+ * Preset for a modern / e-jeepney during the oil hike. Better fuel
+ * efficiency (~9 km/L) softens the blow of higher diesel, but the
+ * higher boundary fee (loan amortization) eats into the savings.
+ * Returns: a fully populated BreakevenInputs
+ */
 static BreakevenInputs breakeven_scenario_modern_jeepney(void) {
     BreakevenInputs in = {85.0f, 9.0f, 160.0f, 12, 2200.0f, 200.0f, 400.0f, 100.0f, 16.0f, 22};
     return in;
 }
 
 /* UV Express — longer inter-city routes, higher fares */
+/* breakeven_scenario_uv_express
+ * -----------------------------
+ * Preset for a UV Express AUV. Long inter-city routes mean fewer
+ * trips per day but higher fares per passenger.
+ * Returns: a fully populated BreakevenInputs
+ */
 static BreakevenInputs breakeven_scenario_uv_express(void) {
     BreakevenInputs in = {85.0f, 12.0f, 180.0f, 8, 1500.0f, 200.0f, 0.0f, 150.0f, 50.0f, 11};
     return in;
 }
 
 /* Provincial Bus — long routes, low efficiency, hired driver */
+/* breakeven_scenario_provincial_bus
+ * ---------------------------------
+ * Preset for a provincial bus. Long routes, low fuel efficiency, and a
+ * hired driver (wages > 0) — the largest cost stack of any scenario.
+ * Returns: a fully populated BreakevenInputs
+ */
 static BreakevenInputs breakeven_scenario_provincial_bus(void) {
     BreakevenInputs in = {85.0f, 5.0f, 320.0f, 2, 4000.0f, 500.0f, 600.0f, 300.0f, 150.0f, 38};
     return in;
 }
 
 /* Tricycle — gasoline, short barangay routes, many trips */
+/* breakeven_scenario_tricycle
+ * ---------------------------
+ * Preset for a tricycle (gasoline-powered). Very high fuel efficiency
+ * and many short trips per day, but tiny passenger capacity per trip.
+ * Returns: a fully populated BreakevenInputs
+ */
 static BreakevenInputs breakeven_scenario_tricycle(void) {
     BreakevenInputs in = {68.0f, 30.0f, 80.0f, 30, 150.0f, 50.0f, 0.0f, 50.0f, 12.0f, 3};
     return in;
@@ -75,6 +134,14 @@ static BreakevenInputs breakeven_scenario_tricycle(void) {
 
 /* ── Custom Input Collection ─────────────────────────────── */
 
+/* breakeven_get_inputs
+ * --------------------
+ * Interactive form that collects all 10 BreakevenInputs fields from
+ * the user one prompt at a time. Used when the driver picks the
+ * "custom values" option instead of a preset scenario, so they can
+ * simulate their own real-world conditions.
+ * Returns: a fully populated BreakevenInputs
+ */
 static BreakevenInputs breakeven_get_inputs(void) {
     BreakevenInputs in;
 
@@ -101,6 +168,16 @@ static BreakevenInputs breakeven_get_inputs(void) {
 
 /* ── Results Display ─────────────────────────────────────── */
 
+/* breakeven_print_results
+ * -----------------------
+ * Displays all fields of a BreakevenResults in a boxed report:
+ * fuel cost, total cost, passengers, revenue, net profit, break-even
+ * pax (total and per trip), and cost-coverage percentage. The net
+ * profit line is colored green/red based on its sign, and the bottom
+ * banner reads PROFITABLE / AT A LOSS / BREAK-EVEN accordingly so the
+ * verdict is unmissable.
+ * Params : r — the simulation results to display
+ */
 static void breakeven_print_results(const BreakevenResults *r) {
     char buf[128];
 
@@ -154,6 +231,12 @@ static void breakeven_print_results(const BreakevenResults *r) {
 
 /* ── Menu Display ────────────────────────────────────────── */
 
+/* breakeven_print_menu
+ * --------------------
+ * Renders the boxed list of scenario options (the six presets, plus
+ * "custom values" and "back"). Called at the top of every loop in
+ * breakeven_menu().
+ */
 static void breakeven_print_menu(void) {
     clear_screen();
     printf("\n");
@@ -179,6 +262,13 @@ static void breakeven_print_menu(void) {
 
 /* ── Public Entry Point ──────────────────────────────────── */
 
+/* breakeven_menu
+ * --------------
+ * Public entry point for the Fare-to-Fuel Break-Even Simulator. Loops:
+ * show menu → grab inputs from the chosen scenario (or custom form) →
+ * run breakeven_calculate() → print the results. Exits when the user
+ * picks 0 to return to the main menu.
+ */
 void breakeven_menu(void) {
     int choice;
 

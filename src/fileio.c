@@ -1,3 +1,4 @@
+
 /* ============================================================
  *  fileio.c - TrakKita Persistent Record Storage
  *  CS103 - Computer Programming 2 | Group 4
@@ -8,6 +9,21 @@
 #include <time.h>
 #include "fileio.h"
 
+/* fileio_save
+ * -----------
+ * Writes all in-memory records (daily P/L summaries and fuel entries)
+ * to puv_records.txt in a human-readable table format. The file opens
+ * in "w" mode, so it fully overwrites the previous save — the file is
+ * a snapshot of current state, not an append log. Layout:
+ *   header   → project name and last-saved date
+ *   [DAYS]   → count line, then a formatted table of DaySummary rows
+ *   [FUEL]   → count line, then a formatted table of FuelEntry rows
+ *   footer   → "End of Records"
+ * If fopen() fails (e.g., disk full or no permission) the function
+ * exits quietly instead of crashing the program.
+ * Params : days, day_count   — daily records to save
+ *          fuel, fuel_count  — fuel log entries to save
+ */
 void fileio_save(DaySummary days[], int day_count,
                  FuelEntry  fuel[], int fuel_count) {
     FILE *fp = fopen(RECORDS_FILE, "w");
@@ -65,6 +81,26 @@ void fileio_save(DaySummary days[], int day_count,
     fclose(fp);
 }
 
+/* fileio_load
+ * -----------
+ * Reads puv_records.txt back into memory at program startup, refilling
+ * the days[] and fuel[] arrays. Designed to tolerate the table-style
+ * format produced by fileio_save():
+ *   1. Section is tracked with `section` (0=none, 1=DAYS, 2=FUEL),
+ *      flipped when we hit a "[DAYS]" or "[FUEL]" header line.
+ *   2. The first numeric line inside a section is treated as the
+ *      record count and stored in `remaining`.
+ *   3. Subsequent lines are passed to sscanf() using the table's
+ *      "  # | date | f | f | ..." pattern. Lines that fail to parse
+ *      (column headers, separator dashes, blanks) are silently
+ *      skipped — `remaining` only decrements on a successful parse.
+ * Trailing \r and \n are stripped so files saved on Windows still load
+ * cleanly on other systems. If the file is missing (first run) we
+ * leave both counts at 0 and return — that's an expected case, not an
+ * error.
+ * Params : days, day_count   — destination array and out-count
+ *          fuel, fuel_count  — destination array and out-count
+ */
 void fileio_load(DaySummary days[], int *day_count,
                  FuelEntry  fuel[], int *fuel_count) {
     *day_count  = 0;

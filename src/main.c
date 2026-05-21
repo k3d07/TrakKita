@@ -40,12 +40,24 @@ static const int JEEP_LINES = 8;
 static const int JEEP_WIDTH = 62;
 static const int INTRO_WIDTH = 78;
 
+/* print_indent
+ * ------------
+ * Prints `spaces` blank characters. Tiny helper used by the intro
+ * animation to push the jeepney art to a specific column on screen.
+ */
 static void print_indent(int spaces) {
     for (int i = 0; i < spaces; i++) {
         putchar(' ');
     }
 }
 
+/* print_centered_text
+ * -------------------
+ * Centers a single line of text within INTRO_WIDTH columns by
+ * calculating the left padding before printing. Used to center the
+ * TrakKita ASCII title above the jeepney during the intro.
+ * Params : text — the string to center
+ */
 static void print_centered_text(const char *text) {
     int width = (int)strlen(text);
     int offset = (INTRO_WIDTH - width) / 2;
@@ -58,6 +70,12 @@ static void print_centered_text(const char *text) {
     printf("%s\n", text);
 }
 
+/* print_intro_title
+ * -----------------
+ * Renders the "TrakKita" ASCII-art logo in cyan/bold, followed by the
+ * tagline and project credits in dim white. Called by animate_intro()
+ * once the jeepney has settled into place.
+ */
 static void print_intro_title(void) {
     static const char *TITLE[] = {
         " _______        _    _  _ _ _          ",
@@ -81,6 +99,16 @@ static void print_intro_title(void) {
     printf(RESET "\n");
 }
 
+/* print_clipped_line
+ * ------------------
+ * Prints one line of the jeepney art at a given horizontal `offset`.
+ * Handles two edge cases: (1) negative offsets — when the jeepney is
+ * still partly off-screen to the left, we skip those characters; and
+ * (2) lines that would run past INTRO_WIDTH — we truncate them.
+ * Without this, the drive-in animation would either crash or wrap.
+ * Params : line   — one row of the jeepney art
+ *          offset — column to start drawing at (may be negative)
+ */
 static void print_clipped_line(const char *line, int offset) {
     int len = (int)strlen(line);
     int start = 0;
@@ -105,6 +133,14 @@ static void print_clipped_line(const char *line, int offset) {
     printf("%.*s\n", visible, line + start);
 }
 
+/* print_jeep_at
+ * -------------
+ * Draws the full jeepney art at the given horizontal `offset`, coloring
+ * each line by its purpose: roof in red, body/label in yellow, wheels
+ * in dim white. Called repeatedly inside animate_intro() to redraw the
+ * jeepney at moving positions, producing the drive-in effect.
+ * Params : offset — column to draw the jeepney at
+ */
 static void print_jeep_at(int offset) {
     for (int i = 0; i < JEEP_LINES; i++) {
         if (i <= 1) {
@@ -122,6 +158,11 @@ static void print_jeep_at(int offset) {
     }
 }
 
+/* print_road
+ * ----------
+ * Prints a dashed horizontal line in dim white directly under the
+ * jeepney to represent the road. Drawn after every frame of the intro.
+ */
 static void print_road(void) {
     printf(DIM FG_WHITE "  ");
     for (int i = 0; i < INTRO_WIDTH - 4; i++) {
@@ -130,6 +171,18 @@ static void print_road(void) {
     printf("\n" RESET);
 }
 
+/* animate_intro
+ * -------------
+ * Plays the opening jeepney animation in five phases:
+ *   1. Drive in   — jeepney slides from off-screen left to center
+ *   2. Brake      — slight reverse for a realistic stop
+ *   3. Settle     — short pause at final position
+ *   4. Title      — TrakKita logo appears above the jeepney
+ *   5. Horn       — "BEEP BEEP!" blinks twice for personality
+ * Each frame: clear screen → reprint jeep at new x → sleep briefly.
+ * Purely cosmetic — runs once at program start, then control passes
+ * to the main menu.
+ */
 static void animate_intro(void) {
     int target = (INTRO_WIDTH - JEEP_WIDTH) / 2;
 
@@ -186,6 +239,12 @@ static void animate_intro(void) {
 /* ============================================================
  *  MAIN MENU
  * ============================================================ */
+/* print_main_menu
+ * ---------------
+ * Renders the main menu — the boxed list of all 5 features plus
+ * "Save and Exit". Called at the top of every iteration of the main
+ * loop so the menu re-appears after each feature exits.
+ */
 static void print_main_menu(void) {
     clear_screen();
     printf("\n");
@@ -212,6 +271,15 @@ static void print_main_menu(void) {
 }
 
 
+/* save_and_exit
+ * -------------
+ * Persists all in-memory records (daily summaries and fuel entries)
+ * to puv_records.txt by calling fileio_save(), then shows a friendly
+ * farewell message. Triggered when the user picks option 6 in the
+ * main menu — ensures nothing entered during the session is lost.
+ * Params : days, day_count   — daily P/L records to save
+ *          fuel, fuel_count  — fuel log entries to save
+ */
 static void save_and_exit(DaySummary days[], int day_count,
                           FuelEntry  fuel[], int fuel_count) {
     clear_screen();
@@ -225,11 +293,21 @@ static void save_and_exit(DaySummary days[], int day_count,
 /* ============================================================
  *  MAIN
  * ============================================================ */
+/* main
+ * ----
+ * Program entry point. Steps performed:
+ *   1. Enable UTF-8 output on Windows (so box-drawing chars render).
+ *   2. Play the intro animation.
+ *   3. Initialize route data and allocate arrays for days/fuel logs.
+ *   4. Load any previously saved records from puv_records.txt.
+ *   5. Run the main menu loop until the user picks "Save and Exit".
+ * Returns: 0 on normal exit.
+ */
 int main(void) {
     /* UTF-8 output on Windows */
 #ifdef _WIN32
     SetConsoleOutputCP(CP_UTF8);
-    SetConsoleCP(CP_UTF8);
+    SetConsoleCP(CP_UTF8); //Input
 #endif
 
     /* Intro animation */
